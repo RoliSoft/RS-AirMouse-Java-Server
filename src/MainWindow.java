@@ -36,10 +36,11 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
     private String _clientName;
     private DataProcessorEngine _engine;
 
-    public void initComponents() {
+    public MainWindow() {
+        super("AirMouse");
+
         setContentPane(jMainPanel);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setTitle("AirMouse");
         addWindowListener(this);
 
         jStatusLabel.setBorder(BorderFactory.createTitledBorder(""));
@@ -57,9 +58,7 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
             Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        MainWindow mainWindow = new MainWindow();
-        mainWindow.initComponents();
-        mainWindow.setVisible(true);
+        new MainWindow().setVisible(true);
     }
 
     public void actionPerformed(java.awt.event.ActionEvent evt) {
