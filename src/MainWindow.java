@@ -35,6 +35,7 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
     private InetAddress _clientAddr;
     private String _clientName;
     private DataProcessorEngine _engine;
+    private MouseHandler _mouseHandler;
 
     public MainWindow() {
         super("AirMouse");
@@ -122,6 +123,9 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         if (_server != null && _server.isConnected()) {
             _server.disconnect();
         }
+
+        jDisconnectButton.setText("Drop client");
+        setConnectionLabels();
     }
 
     private void startServer() {
@@ -174,6 +178,12 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
 
         try {
             _engine = DataProcessorEngine.createFromType(type);
+
+            if (_mouseHandler == null) {
+                _mouseHandler = new MouseHandler();
+            }
+
+            _engine.setMouseHandler(_mouseHandler);
         } catch (IllegalArgumentException ex) {
             _engine = null;
             Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
@@ -203,6 +213,7 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
             case "type": {
                 try {
                     _engine = DataProcessorEngine.createFromType(Integer.parseInt(data.substring(idx + 1)));
+                    _engine.setMouseHandler(_mouseHandler);
                 } catch (IllegalArgumentException ex) {
                     _engine = null;
                     Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
@@ -224,6 +235,10 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
     public void clientDisconnected() {
         _clientAddr = null;
         _engine = null;
+
+        if (_mouseHandler != null && _mouseHandler.isRunning()) {
+            _mouseHandler.stop();
+        }
 
         if (_server == null || !_server.isListening()) {
             jStatusLabel.setText("Server is not running.");

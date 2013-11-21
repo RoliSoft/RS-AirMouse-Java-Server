@@ -19,33 +19,17 @@ public abstract class DataProcessorEngine {
     public static final int ACCELEROMETER = 1;
     public static final int GYROSCOPE = 2;
 
-    private static Robot _robot;
-    private static PointerInfo _mouse;
-    private static Dimension _screen;
+    private MouseHandler _mouseHandler;
 
-    static {
-        try {
-            _robot  = new Robot();
-            _mouse  = MouseInfo.getPointerInfo();
-            _screen = Toolkit.getDefaultToolkit().getScreenSize();
-        } catch (AWTException ex) {
-            Logger.getLogger(DataProcessorEngine.class.getName()).log(Level.SEVERE, null, ex);
-        }
+    public void setMouseHandler(MouseHandler mouseHandler) {
+        _mouseHandler = mouseHandler;
+    }
+
+    public MouseHandler getMouseHandler() {
+        return _mouseHandler;
     }
 
     public abstract void processData(String data);
-
-    public static Dimension getScreenSize() {
-        return _screen;
-    }
-
-    public static Point getCursorPos() {
-        return _mouse.getLocation();
-    }
-
-    public static void moveMouse(int x, int y) {
-        _robot.mouseMove(x, y);
-    }
 
     public static DataProcessorEngine createFromType(int type) throws IllegalArgumentException {
         switch (type) {

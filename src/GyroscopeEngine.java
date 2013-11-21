@@ -19,7 +19,7 @@ public class GyroscopeEngine extends DataProcessorEngine {
 
     @Override
     public String toString() {
-        return "Angular rotation via Gyroscope";
+        return "Gyroscope";
     }
 
 }
