@@ -223,6 +223,30 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
 
                 break;
             }
+
+            case "reset": {
+                if (_engine == null) {
+                    break;
+                }
+
+                _engine.recalibrate();
+
+                break;
+            }
+
+            case "tap": {
+                if (_engine == null) {
+                    break;
+                }
+
+                if (cmd.substring(idx + 1).contentEquals("on")) {
+                    _mouseHandler.press();
+                } else {
+                    _mouseHandler.release();
+                }
+
+                break;
+            }
         }
     }
 

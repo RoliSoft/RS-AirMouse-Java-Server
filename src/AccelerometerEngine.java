@@ -1,4 +1,3 @@
-import java.awt.*;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -9,8 +8,7 @@ import java.util.logging.Logger;
  */
 public class AccelerometerEngine extends DataProcessorEngine {
 
-    private final double g = 9.80665;
-    private double _x, _y, _pX, _pY;
+    private double _cX, _cY;
 
     public AccelerometerEngine() {
 
@@ -36,26 +34,29 @@ public class AccelerometerEngine extends DataProcessorEngine {
             mouseHandler.start();
         }
 
-        y -= 6;
-
-        if (x < 1 && x > -1 && y < 1 && y > -1) {
-            mouseHandler.setHeading(0, 0);
+        if (_cX == 0 && _cY == 0) {
+            _cX = x;
+            _cY = y;
             return;
         }
 
-        _x = -((20 / g) * x);
-        _y = -((20 / g) * (y - (g / 2.0f)));
-        if (Math.abs(_pX) < 1) {
-            x += _pX;
-        }
-        if (Math.abs(_pY) < 1) {
-            y += _pY;
+        x -= _cX;
+        y -= _cY;
+
+        if (x < 1 && x > -1) {
+            x = 0;
         }
 
-        mouseHandler.setHeading(x, y);
+        if (y < 1 && y > -1) {
+            y = 0;
+        }
 
-        _pX = _x;
-        _pY = _y;
+        mouseHandler.setHeading(-x, y);
+    }
+
+    @Override
+    public void recalibrate() {
+        _cX = _cY = 0;
     }
 
     @Override

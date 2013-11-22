@@ -1,4 +1,5 @@
 import java.awt.*;
+import java.awt.event.InputEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,6 +27,26 @@ public class MouseHandler {
         }
     }
 
+    public static Point getCursorPos() {
+        return MouseInfo.getPointerInfo().getLocation();
+    }
+
+    public static Dimension getScreenSize() {
+        return _screen;
+    }
+
+    public static void moveTo(int x, int y) {
+        _robot.mouseMove(x, y);
+    }
+
+    public static void press() {
+        _robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+    }
+
+    public static void release() {
+        _robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+    }
+
     public void start() {
         if (isRunning()) {
             return;
@@ -45,7 +66,7 @@ public class MouseHandler {
                 }
 
                 Point mouse = MouseInfo.getPointerInfo().getLocation();
-                _robot.mouseMove((int)(Math.round(mouse.getX() + _x) % _screen.getWidth()), (int)(Math.round(mouse.getY() + _y) % _screen.getHeight()));
+                moveTo((int)(Math.round(mouse.getX() + _x) % _screen.getWidth()), (int)(Math.round(mouse.getY() + _y) % _screen.getHeight()));
 
                 try {
                     Thread.sleep(10);

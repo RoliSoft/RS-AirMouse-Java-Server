@@ -30,6 +30,7 @@ public abstract class DataProcessorEngine {
     }
 
     public abstract void processData(String data);
+    public abstract void recalibrate();
 
     public static DataProcessorEngine createFromType(int type) throws IllegalArgumentException {
         switch (type) {
