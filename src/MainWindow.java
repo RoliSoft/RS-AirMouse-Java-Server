@@ -32,7 +32,7 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
     private JPanel jLeftPanel;
     private JPanel jRightPanel;
 
-    private Server _server;
+    private ServerManager _serverManager;
     private InetAddress _clientAddr;
     private String _clientName;
     private DataProcessorEngine _engine;
@@ -112,10 +112,10 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
     /**
      * Gets the currently active server instance.
      *
-     * @return Server instance.
+     * @return ServerManager instance.
      */
-    public Server getServer() {
-        return _server;
+    public ServerManager getServer() {
+        return _serverManager;
     }
 
     /**
@@ -230,7 +230,7 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
      * @param evt Event data.
      */
     private void jToggleServerButtonActionPerformed(java.awt.event.ActionEvent evt) {
-        if (_server == null || !_server.isListening()) {
+        if (_serverManager == null || !_serverManager.isListening()) {
             startServer();
         } else {
             stopServer();
@@ -247,8 +247,8 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         jDisconnectButton.setEnabled(false);
         jDisconnectButton.setText("Disconnecting...");
 
-        if (_server != null && _server.isConnected()) {
-            _server.disconnect();
+        if (_serverManager != null && _serverManager.isConnected()) {
+            _serverManager.disconnect();
         }
 
         jDisconnectButton.setText("Drop client");
@@ -259,7 +259,7 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
      * Starts the underlying server and updates UI elements accordingly.
      */
     private void startServer() {
-        if (_server != null) {
+        if (_serverManager != null) {
             stopServer();
         }
 
@@ -267,11 +267,11 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         jToggleServerButton.setEnabled(false);
         jToggleServerButton.setText("Starting...");
 
-        _server = new Server();
-        _server.addListener(this);
+        _serverManager = new ServerManager();
+        _serverManager.addListener(this);
 
         try {
-            _server.start();
+            _serverManager.start();
         } catch (IOException ex) {
             Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
             jStatusLabel.setText("Server is not running.");
@@ -292,9 +292,9 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         jToggleServerButton.setEnabled(false);
         jToggleServerButton.setText("Stopping...");
 
-        _server.disconnect();
-        _server.stop();
-        _server = null;
+        _serverManager.disconnect();
+        _serverManager.stop();
+        _serverManager = null;
 
         jStatusLabel.setText("Server is not running.");
         setConnectionLabels();
@@ -412,7 +412,7 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
             MouseHandler.stop();
         }
 
-        if (_server == null || !_server.isListening()) {
+        if (_serverManager == null || !_serverManager.isListening()) {
             jStatusLabel.setText("Server is not running.");
         } else {
             jStatusLabel.setText("Server is running.");
@@ -427,7 +427,7 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
     private void setConnectionLabels() {
         // Update the server status label.
 
-        if (_server == null || !_server.isListening()) {
+        if (_serverManager == null || !_serverManager.isListening()) {
             jServerLabel.setText("N/A");
             jServerLabel.setForeground(UIManager.getDefaults().getColor("Button.disabledForeground"));
 
@@ -505,9 +505,9 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         }
 
         if (hosts.length() == 0) {
-            hosts = "*:" + _server.getPort();
+            hosts = "*:" + _serverManager.getPort();
         } else {
-            hosts += (hosts.length() > 15 ? "]" : "") + ":" + _server.getPort();
+            hosts += (hosts.length() > 15 ? "]" : "") + ":" + _serverManager.getPort();
         }
 
         return hosts;

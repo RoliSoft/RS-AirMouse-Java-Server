@@ -7,14 +7,14 @@ import java.io.IOException;
  */
 public abstract class Protocol {
 
-    private Server _server;
+    private TcpServer _server;
 
     /**
      * Initializes the current instance.
      *
      * @param server The server on which this protocol is spoken.
      */
-    public Protocol(Server server) {
+    public Protocol(TcpServer server) {
         _server = server;
     }
 
@@ -23,7 +23,7 @@ public abstract class Protocol {
      *
      * @return Associated server instance.
      */
-    public Server getServer() {
+    public TcpServer getServer() {
         return _server;
     }
 

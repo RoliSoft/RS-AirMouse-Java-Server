@@ -20,7 +20,7 @@ public class PlainTextProtocol extends Protocol {
      *
      * @param server The server on which this protocol is spoken.
      */
-    public PlainTextProtocol(Server server) {
+    public PlainTextProtocol(TcpServer server) {
         super(server);
     }
 

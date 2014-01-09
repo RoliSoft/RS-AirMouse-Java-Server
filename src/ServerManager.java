@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  *
  * @author RoliSoft
  */
-public class Server {
+public class ServerManager {
 
     /**
      * The port to be used to receive broadcast UDP message.
@@ -27,19 +27,17 @@ public class Server {
      */
     public static final int BCAST_PORT = 8337;
 
-    private ServerSocket _tcpServer;
+    private TcpServer _tcpServer;
     private DatagramSocket _udpServer;
     private Thread _tcpThread, _udpThread;
-    private Socket _client;
     private DataInputStream _tcpInStream;
     private DataOutputStream _tcpOutStream;
     private ArrayList<ClientListener> _listeners;
-    private Protocol _protocol;
 
     /**
      * Initializes the current instance.
      */
-    public Server() {
+    public ServerManager() {
         _listeners = new ArrayList<>();
     }
 
@@ -49,7 +47,7 @@ public class Server {
      * @return Value indicating whether TCP server is alive.
      */
     public boolean isListening() {
-        return _tcpServer != null && _tcpServer.isBound();
+        return _tcpServer != null && _tcpServer.isListening();
     }
 
     /**
@@ -58,7 +56,7 @@ public class Server {
      * @return Value indicating whether a client is connected.
      */
     public boolean isConnected() {
-        return _client != null && _client.isConnected();
+        return _tcpServer != null && _tcpServer.isConnected();
     }
 
     /**
@@ -67,7 +65,7 @@ public class Server {
      * @return Port of the TCP server or -1.
      */
     public int getPort() {
-        return !isListening() ? -1 : _tcpServer.getLocalPort();
+        return _tcpServer != null ? -1 : _tcpServer.getPort();
     }
 
     /**
@@ -92,39 +90,12 @@ public class Server {
     }
 
     /**
-     * Gets the current instance of the TCP input stream.
-     *
-     * @return The input stream to read from.
-     */
-    public DataInputStream getInputStream() {
-        return _tcpInStream;
-    }
-
-    /**
-     * Gets the current instance of the TCP output stream.
-     *
-     * @return The output stream to write to.
-     */
-    public DataOutputStream getOutputStream() {
-        return _tcpOutStream;
-    }
-
-    /**
      * Gets the current list of client listeners.
      *
      * @return A list of client listeners.
      */
     public ArrayList<ClientListener> getListeners() {
         return _listeners;
-    }
-
-    /**
-     * Gets the currently connected client or null.
-     *
-     * @return Connected client or null.
-     */
-    public Socket getClient() {
-        return _client;
     }
 
     /**
@@ -137,10 +108,10 @@ public class Server {
     public void start() throws IOException {
         stop();
 
-        _tcpServer = new ServerSocket(0);
+        _tcpServer = new TcpServer(this);
         _udpServer = new DatagramSocket(BCAST_PORT);
 
-        startTcpAcceptAsync();
+        _tcpServer.start();
         startUdpListenAsync();
     }
 
@@ -150,20 +121,11 @@ public class Server {
      */
     public void stop() {
         if (_tcpServer != null) {
-            try {
-                _tcpServer.close();
-            } catch (IOException ex) {
-                Logger.getLogger(Server.class.getName()).log(Level.FINE, null, ex);
-            }
+            _tcpServer.stop();
         }
 
         if (_udpServer != null) {
             _udpServer.close();
-        }
-
-        if (_tcpThread != null) {
-            _tcpThread.stop();
-            _tcpThread = null;
         }
 
         if (_udpThread != null) {
@@ -177,95 +139,9 @@ public class Server {
      * The TCP server will continue to accept new clients at this point.
      */
     public void disconnect() {
-        if (_client != null && _client.isConnected()) {
-            try {
-                _client.close();
-            } catch (IOException ex) {
-                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        if (_tcpServer != null && _tcpServer.isConnected()) {
+            _tcpServer.disconnect();
         }
-
-        _client = null;
-    }
-
-    /**
-     * Starts the TCP server asynchronously.
-     * This socket is used to accept incoming connections and to communicate with them using the specified protocol.
-     */
-    private void startTcpAcceptAsync() {
-        // TODO extract this
-
-        _tcpThread = new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                while (_tcpThread != null) {
-                    try {
-                        _client = _tcpServer.accept();
-
-                        _tcpInStream  = new DataInputStream(new BufferedInputStream(_client.getInputStream()));
-                        _tcpOutStream = new DataOutputStream(new BufferedOutputStream(_client.getOutputStream()));
-
-                        _protocol = new PlainTextProtocol(Server.this);
-                    } catch (IOException ex) {
-                        Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-
-                        for (ClientListener dl : _listeners) {
-                            dl.connectionError(ex);
-                        }
-
-                        continue;
-                    }
-
-                    Logger.getLogger(Server.class.getName()).log(Level.INFO, "Client connected from {0}", _client.getInetAddress().getHostAddress());
-
-                    try {
-                        _protocol.handshake();
-
-                        boolean loop = true;
-                        while (loop && _client != null) {
-                            try {
-                                loop = _protocol.readNext();
-                            } catch (IOException ex) {
-                                loop = false;
-                            }
-                        }
-
-                        if (_client != null && _client.isConnected()) {
-                            try {
-                                _client.close();
-                            } catch (IOException ex1) {
-                                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex1);
-                            }
-                        }
-
-                        for (ClientListener dl : _listeners) {
-                            dl.clientDisconnected();
-                        }
-
-                    } catch (IOException ex) {
-                        Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-
-                        for (ClientListener dl : _listeners) {
-                            dl.connectionError(ex);
-                        }
-
-                        if (_client.isConnected()) {
-                            try {
-                                _client.close();
-                            } catch (IOException ex1) {
-                                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex1);
-                            }
-                        }
-
-                        _client = null;
-                    }
-                }
-            }
-
-        });
-
-        _tcpThread.start();
     }
 
     /**
@@ -287,10 +163,10 @@ public class Server {
                     try {
                         _udpServer.receive(packet);
                     } catch (IOException ex) {
-                        Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(ServerManager.class.getName()).log(Level.SEVERE, null, ex);
                     }
 
-                    Logger.getLogger(Server.class.getName()).log(Level.INFO, "Packet received from {0}", packet.getAddress().getHostAddress());
+                    Logger.getLogger(ServerManager.class.getName()).log(Level.INFO, "Packet received from {0}", packet.getAddress().getHostAddress());
 
                     String data = new String(packet.getData()).trim();
 
@@ -329,16 +205,16 @@ public class Server {
                         Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
                     }
 
-                    byte[] send = ("RS-AirMouse " + laddr + " " + _tcpServer.getLocalPort()).getBytes();
+                    byte[] send = ("RS-AirMouse " + laddr + " " + _tcpServer.getPort()).getBytes();
 
                     DatagramPacket resp;
                     try {
                         resp = new DatagramPacket(send, send.length, packet.getSocketAddress());
                         _udpServer.send(resp);
                     } catch (SocketException ex) {
-                        Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(ServerManager.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (IOException ex) {
-                        Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(ServerManager.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
