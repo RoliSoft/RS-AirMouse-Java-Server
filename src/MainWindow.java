@@ -2,7 +2,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowListener;
-import java.awt.geom.Arc2D;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -60,69 +59,6 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
 
         pack();
         setLocationRelativeTo(null);
-    }
-
-    /**
-     * Gets the currently connected client's address.
-     *
-     * @return Client's address.
-     */
-    public InetAddress getClientAddress() {
-        return _clientAddr;
-    }
-
-    /**
-     * Sets the currently connected client's address.
-     *
-     * @param clientAddr Client's address.
-     */
-    public void setClientAddress(InetAddress clientAddr) {
-        _clientAddr = clientAddr;
-    }
-
-    /**
-     * Gets the currently connected client's host or device name.
-     *
-     * @return Client's name.
-     */
-    public String getClientName() {
-        return _clientName;
-    }
-
-    /**
-     * Sets the currently connected client's host or device name.
-     *
-     * @param clientName Client's name.
-     */
-    public void setClientName(String clientName) {
-        _clientName = clientName;
-    }
-
-    /**
-     * Gets the currently active data processing engine instance.
-     *
-     * @return Data processor engine instance.
-     */
-    public DataProcessorEngine getDataProcessorEngine() {
-        return _engine;
-    }
-
-    /**
-     * Sets the currently active data processing engine instance.
-     *
-     * @param engine Data processor engine instance.
-     */
-    public void setDataProcessorEngine(DataProcessorEngine engine) {
-        _engine = engine;
-    }
-
-    /**
-     * Gets the currently active server instance.
-     *
-     * @return ServerManager instance.
-     */
-    public ServerManager getServer() {
-        return _serverManager;
     }
 
     /**
