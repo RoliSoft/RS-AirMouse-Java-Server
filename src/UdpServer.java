@@ -71,13 +71,8 @@ public class UdpServer implements Runnable {
     }
 
     /**
-     * When an object implementing interface <code>Runnable</code> is used
-     * to create a thread, starting the thread causes the object's
-     * <code>run</code> method to be called in that separately executing
-     * thread.
-     * <p>
-     * The general contract of the method <code>run</code> is that it may
-     * take any action whatsoever.
+     * Runs in a separate thread, where it waits indefinitely for UDP broadcast messages,
+     * and if the header matches, replies with the location of the local TCP server.
      *
      * @see Thread#run()
      */

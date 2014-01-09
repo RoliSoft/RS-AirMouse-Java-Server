@@ -31,6 +31,12 @@ public class MouseMoverThread extends Thread {
         _time = System.currentTimeMillis();
     }
 
+    /**
+     * Runs in a separate thread until stopped. With 10 millisecond delays, it moves the mouse to
+     * the specified heading coordinate, given that the last time it was set is not more than a second.
+     *
+     * @see Thread#run()
+     */
     @Override
     public void run() {
         while (true) {
