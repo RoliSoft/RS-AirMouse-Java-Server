@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 
 /**
  * Main window of the AirMouse application.
+ *
  * @author RoliSoft
  */
 public class MainWindow extends JFrame implements ActionListener, WindowListener, DataListener {
@@ -37,6 +38,9 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
     private DataProcessorEngine _engine;
     private MouseHandler _mouseHandler;
 
+    /**
+     * Initializes the current instance and sets up the user interface.
+     */
     public MainWindow() {
         super("AirMouse");
 
@@ -52,6 +56,11 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         setLocationRelativeTo(null);
     }
 
+    /**
+     * The main entry-point of the application. Starts a new {@see MainWindow} instance.
+     *
+     * @param args Arguments received from the operating system.
+     */
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -62,6 +71,11 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         new MainWindow().setVisible(true);
     }
 
+    /**
+     * Handles button clicks.
+     *
+     * @param evt Event data.
+     */
     public void actionPerformed(java.awt.event.ActionEvent evt) {
         if (evt.getSource() == jToggleServerButton) {
             MainWindow.this.jToggleServerButtonActionPerformed(evt);
@@ -71,42 +85,88 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         }
     }
 
+    /**
+     * This function is not currently used, but its implementation is required by {@see ActionListener}.
+     *
+     * @param evt Event data.
+     */
     public void windowActivated(java.awt.event.WindowEvent evt) {
 
     }
 
+    /**
+     * This function is not currently used, but its implementation is required by {@see ActionListener}.
+     *
+     * @param evt Event data.
+     */
     public void windowClosed(java.awt.event.WindowEvent evt) {
 
     }
 
+    /**
+     * This function is not currently used, but its implementation is required by {@see ActionListener}.
+     *
+     * @param evt Event data.
+     */
     public void windowClosing(java.awt.event.WindowEvent evt) {
 
     }
 
+    /**
+     * This function is not currently used, but its implementation is required by {@see ActionListener}.
+     *
+     * @param evt Event data.
+     */
     public void windowDeactivated(java.awt.event.WindowEvent evt) {
     }
 
-
+    /**
+     * This function is not currently used, but its implementation is required by {@see ActionListener}.
+     *
+     * @param evt Event data.
+     */
     public void windowDeiconified(java.awt.event.WindowEvent evt) {
 
     }
 
+    /**
+     * This function is not currently used, but its implementation is required by {@see ActionListener}.
+     *
+     * @param evt Event data.
+     */
     public void windowIconified(java.awt.event.WindowEvent evt) {
 
     }
 
+    /**
+     * Occurs when the window is initialized and being shown to the user.
+     * Calls {@see formWindowOpened(WindowEvent)} for further user-land initialization.
+     *
+     * @param evt Event data.
+     */
     public void windowOpened(java.awt.event.WindowEvent evt) {
         if (evt.getSource() == MainWindow.this) {
             MainWindow.this.formWindowOpened(evt);
         }
     }
 
+    /**
+     * Called by {@see ActionListener.windowOpened(WindowEvent)} on first show to set up the interface.
+     * Upon the UI has been initialized, the underlying servers will be started automatically.
+     *
+     * @param evt Event data.
+     */
     private void formWindowOpened(java.awt.event.WindowEvent evt) {
         jStatusLabel.setText("Ready.");
         setConnectionLabels();
         startServer();
     }
 
+    /**
+     * Handles clicks to jToggleServerButton, by starting and stopping the underlying server.
+     *
+     * @param evt Event data.
+     */
     private void jToggleServerButtonActionPerformed(java.awt.event.ActionEvent evt) {
         if (_server == null || !_server.isListening()) {
             startServer();
@@ -115,6 +175,11 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         }
     }
 
+    /**
+     * Handles clicks to jDisconnectButton, by disconnecting the underlying client, if there are any.
+     *
+     * @param evt Event data.
+     */
     private void jDisconnectButtonActionPerformed(java.awt.event.ActionEvent evt) {
         jStatusLabel.setText("Disconnecting client...");
         jDisconnectButton.setEnabled(false);
@@ -128,6 +193,9 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         setConnectionLabels();
     }
 
+    /**
+     * Starts the underlying server and updates UI elements accordingly.
+     */
     private void startServer() {
         if (_server != null) {
             stopServer();
@@ -154,6 +222,9 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         setConnectionLabels();
     }
 
+    /**
+     * Stops the underling server and updates UI elements accordingly.
+     */
     private void stopServer() {
         jStatusLabel.setText("Stopping server...");
         jToggleServerButton.setEnabled(false);
@@ -167,6 +238,16 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         setConnectionLabels();
     }
 
+    /**
+     * Occurs when a new client has connected to the local endpoint.
+     *
+     * @param addr The IP address of the connecting client.
+     * @param name The name of the connecting device's name.
+     *             This can be either a hostname or a device name as returned by Android.
+     * @param type The type of the sensor which the connecting client initially offers.
+     *             This may be changed throughout the session by crafting the appropriate package
+     *             to be received with {@link this.dataReceived(String)}.
+     */
     @Override
     public void clientConnected(InetAddress addr, String name, int type) {
         if (name.length() == 0) {
@@ -194,6 +275,14 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         setConnectionLabels();
     }
 
+    /**
+     * Occurs when data is received from the remote client.
+     * This data is a one-line ASCII text, which may be sent along to the active sensor data preprocessor,
+     * or handled locally by the implementing class.
+     *
+     * @param data One-line ASCII text containing commands.
+     *             The protocol is similar to that of IRC.
+     */
     @Override
     public void dataReceived(String data) {
         int idx;
@@ -250,11 +339,19 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         }
     }
 
+    /**
+     * Occurs when a the connection has been lost due to a connection error.
+     *
+     * @param data This argument may contain null, Exception or String in order to explain the cause.
+     */
     @Override
     public void connectionError(Object data) {
         JOptionPane.showMessageDialog(this, "Client connection error:\r\n" + (data instanceof Exception ? ((Exception)data).getMessage() : (String)data), "AirMouse Network Error", JOptionPane.ERROR_MESSAGE);
     }
 
+    /**
+     * Occurs when the client has gracefully disconnected from the server.
+     */
     @Override
     public void clientDisconnected() {
         _clientAddr = null;
@@ -273,7 +370,12 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         setConnectionLabels();
     }
 
+    /**
+     * Updates the UI elements to reflect the actual state of the server, client and status.
+     */
     private void setConnectionLabels() {
+        // Update the server status label.
+
         if (_server == null || !_server.isListening()) {
             jServerLabel.setText("N/A");
             jServerLabel.setForeground(UIManager.getDefaults().getColor("Button.disabledForeground"));
@@ -281,48 +383,14 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
             jToggleServerButton.setEnabled(true);
             jToggleServerButton.setText("Start server");
         } else {
-            String hosts = "";
-
-            try {
-                Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
-
-                for (NetworkInterface netint : Collections.list(nets)) {
-                    if (!netint.isUp() || netint.isLoopback() || netint.isVirtual() || netint.getDisplayName().contains("VMware")) {
-                        continue;
-                    }
-
-                    for (InetAddress iaddr : Collections.list(netint.getInetAddresses())) {
-                        if (!iaddr.isSiteLocalAddress() || iaddr instanceof Inet6Address) {
-                            continue;
-                        }
-
-                        if (hosts.length() > 0) {
-                            if (hosts.charAt(0) != '[') {
-                                hosts = "[" + hosts;
-                            }
-
-                            hosts += ", ";
-                        }
-
-                        hosts += iaddr.getHostAddress();
-                    }
-                }
-            } catch (SocketException ex) {
-                Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-            if (hosts.length() == 0) {
-                hosts = "*:" + _server.getPort();
-            } else {
-                hosts += (hosts.length() > 15 ? "]" : "") + ":" + _server.getPort();
-            }
-
-            jServerLabel.setText(hosts);
+            jServerLabel.setText(getLocalEndpoint());
             jServerLabel.setForeground(UIManager.getDefaults().getColor("Button.foreground"));
 
             jToggleServerButton.setEnabled(true);
             jToggleServerButton.setText("Stop server");
         }
+
+        // Update the client status label.
 
         if (_clientAddr == null) {
             jClientLabel.setText("N/A");
@@ -336,6 +404,8 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
             jDisconnectButton.setEnabled(true);
         }
 
+        // Update the selected sensor label.
+
         if (_engine == null) {
             jTypeLabel.setText("N/A");
             jTypeLabel.setForeground(UIManager.getDefaults().getColor("Button.disabledForeground"));
@@ -343,6 +413,53 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
             jTypeLabel.setText(_engine.toString());
             jTypeLabel.setForeground(UIManager.getDefaults().getColor("Button.foreground"));
         }
+    }
+
+    /**
+     * If the server is running, try to find the best possible local IP address to display to the user.
+     * Otherwise fallback to "*" as the listening address, this however, does no carry any meaning if the user has to
+     * manually enter the IP address on the connecting device.
+     *
+     * @return Local listening address.
+     */
+    private String getLocalEndpoint() {
+        String hosts = "";
+
+        try {
+            Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+
+            for (NetworkInterface netint : Collections.list(nets)) {
+                if (!netint.isUp() || netint.isLoopback() || netint.isVirtual() || netint.getDisplayName().contains("VMware")) {
+                    continue;
+                }
+
+                for (InetAddress iaddr : Collections.list(netint.getInetAddresses())) {
+                    if (!iaddr.isSiteLocalAddress() || iaddr instanceof Inet6Address) {
+                        continue;
+                    }
+
+                    if (hosts.length() > 0) {
+                        if (hosts.charAt(0) != '[') {
+                            hosts = "[" + hosts;
+                        }
+
+                        hosts += ", ";
+                    }
+
+                    hosts += iaddr.getHostAddress();
+                }
+            }
+        } catch (SocketException ex) {
+            Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        if (hosts.length() == 0) {
+            hosts = "*:" + _server.getPort();
+        } else {
+            hosts += (hosts.length() > 15 ? "]" : "") + ":" + _server.getPort();
+        }
+
+        return hosts;
     }
 
 }
