@@ -1,5 +1,6 @@
 import java.awt.*;
 import java.awt.event.InputEvent;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,15 +21,17 @@ public class MouseHandler {
     private static PointerInfo _mouse;
     private static Dimension _screen;
     private static MouseMoverThread _thd;
+    private static ArrayList<HeadingListener> _listeners;
 
     /**
      * Initializes the static values for private use of this class.
      */
     static {
         try {
-            _robot  = new Robot();
-            _mouse  = MouseInfo.getPointerInfo();
-            _screen = Toolkit.getDefaultToolkit().getScreenSize();
+            _robot     = new Robot();
+            _mouse     = MouseInfo.getPointerInfo();
+            _screen    = Toolkit.getDefaultToolkit().getScreenSize();
+            _listeners = new ArrayList<>();
         } catch (AWTException ex) {
             Logger.getLogger(DataProcessorEngine.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -56,6 +59,37 @@ public class MouseHandler {
         return _screen;
     }
 
+
+    /**
+     * Registers a new {@see HeadingListener} on this instance.
+     * When something happens, these registered instances will be notified in chronological order of their registration.
+     *
+     * @param hl An instance implementing the {@see HeadingListener} interface.
+     */
+    public static void addListener(HeadingListener hl) {
+        _listeners.add(hl);
+    }
+
+    /**
+     * De-registers the specified instance from the list of notified instances.
+     *
+     * @param hl A previously-added instance.
+     *
+     * @return True if the listener was successfully removed; otherwise, false.
+     */
+    public static boolean removeListener(HeadingListener hl) {
+        return _listeners.remove(hl);
+    }
+
+    /**
+     * Gets the current list of heading listeners.
+     *
+     * @return A list of heading listeners.
+     */
+    public static ArrayList<HeadingListener> getListeners() {
+        return _listeners;
+    }
+
     /**
      * Moves the mouse to the specified coordinates using the underlying {@see Robot} class.
      *
@@ -64,6 +98,10 @@ public class MouseHandler {
      */
     public static void moveTo(int x, int y) {
         _robot.mouseMove(x, y);
+
+        for (HeadingListener hl : getListeners()) {
+            hl.setCoordinate(x, y);
+        }
     }
 
     /**
@@ -80,6 +118,10 @@ public class MouseHandler {
         }
 
         _thd.setHeading(x, y);
+
+        for (HeadingListener hl : getListeners()) {
+            hl.setHeading(x, y);
+        }
     }
 
     /**

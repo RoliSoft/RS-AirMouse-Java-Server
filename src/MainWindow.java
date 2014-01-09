@@ -1,11 +1,14 @@
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowListener;
+import java.awt.geom.Arc2D;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.logging.Level;
@@ -16,7 +19,7 @@ import java.util.logging.Logger;
  *
  * @author RoliSoft
  */
-public class MainWindow extends JFrame implements ActionListener, WindowListener, ClientListener {
+public class MainWindow extends JFrame implements ActionListener, WindowListener, ClientListener, HeadingListener {
 
     private JButton jToggleServerButton;
     private JButton jDisconnectButton;
@@ -31,6 +34,10 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
     private JPanel jContentPanel;
     private JPanel jLeftPanel;
     private JPanel jRightPanel;
+    private JLabel jXLabel;
+    private JLabel jYLabel;
+    private JProgressBar jXProgressBar;
+    private JProgressBar jYProgressBar;
 
     private ServerManager _serverManager;
     private InetAddress _clientAddr;
@@ -222,6 +229,7 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         jStatusLabel.setText("Ready.");
         setConnectionLabels();
         startServer();
+        MouseHandler.addListener(this);
     }
 
     /**
@@ -468,6 +476,10 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
             jTypeLabel.setText(_engine.toString());
             jTypeLabel.setForeground(UIManager.getDefaults().getColor("Button.foreground"));
         }
+
+        // Update the progress bars.
+
+        setHeading(0, 0);
     }
 
     /**
@@ -517,4 +529,46 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         return hosts;
     }
 
+    /**
+     * Sets a new coordinate based on the translated sensor data.
+     *
+     * @param x The value of the X coordinate.
+     * @param y The value of the Y coordinate.
+     */
+    @Override
+    public void setCoordinate(double x, double y) {
+
+    }
+
+    /**
+     * Sets a new heading based on the translated sensor data.
+     *
+     * @param x The value of the X axis.
+     * @param y The value of the Y axis.
+     */
+    @Override
+    public void setHeading(double x, double y) {
+        x = Math.abs(x);
+        y = Math.abs(y);
+
+        DecimalFormat df = new DecimalFormat("0.000");
+
+        if (x > 10) {
+            jXProgressBar.setForeground(Color.red);
+        } else if (jXProgressBar.getForeground() == Color.red) {
+            jXProgressBar.setForeground(UIManager.getDefaults().getColor("ProgressBar.foreground"));
+        }
+
+        jXProgressBar.setValue((int)(x * 8));
+        jXProgressBar.setString(df.format(x));
+
+        if (y > 10) {
+            jYProgressBar.setForeground(Color.red);
+        } else if (jYProgressBar.getForeground() == Color.red) {
+            jYProgressBar.setForeground(UIManager.getDefaults().getColor("ProgressBar.foreground"));
+        }
+
+        jYProgressBar.setValue((int)(y * 7));
+        jYProgressBar.setString(df.format(y));
+    }
 }
