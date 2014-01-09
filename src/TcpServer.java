@@ -6,7 +6,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by RoliSoft on 1/9/14.
+ *  Multi-threaded yet single-client TCP server implementation.
+ *
+ *  @author RoliSoft
  */
 public class TcpServer implements Runnable {
 
@@ -113,7 +115,6 @@ public class TcpServer implements Runnable {
         _thread = new Thread(this);
         _thread.start();
     }
-
 
     /**
      * Stops the TCP server, if it is running.

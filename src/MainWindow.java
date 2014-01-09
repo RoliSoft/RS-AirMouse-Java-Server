@@ -233,6 +233,10 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         if (_serverManager == null || !_serverManager.isListening()) {
             startServer();
         } else {
+            if (_serverManager != null && _serverManager.isConnected()) {
+                jDisconnectButtonActionPerformed(evt);
+            }
+
             stopServer();
         }
     }
