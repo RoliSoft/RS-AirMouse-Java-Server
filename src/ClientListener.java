@@ -1,11 +1,11 @@
 import java.net.InetAddress;
 
 /**
- * Represents an interface to convey messages from the connected client.
+ * Represents an interface to report connection status and convey messages from the connected client.
  *
  * @author RoliSoft
  */
-public interface DataListener {
+public interface ClientListener {
 
     /**
      * Occurs when a new client has connected to the local endpoint.
@@ -20,14 +20,32 @@ public interface DataListener {
     public void clientConnected(InetAddress addr, String name, int type);
 
     /**
-     * Occurs when data is received from the remote client.
-     * This data is a one-line ASCII text, which may be sent along to the active sensor data preprocessor,
-     * or handled locally by the implementing class.
+     * Occurs when sensor data is received from the remote client.
      *
-     * @param data One-line ASCII text containing commands.
-     *             The protocol is similar to that of IRC.
+     * @param data Sensor data to be processed.
      */
-    public void dataReceived(String data);
+    public void sensorDataReceived(double[] data);
+
+    /**
+     * Occurs when the remote device has changed the sensor type.
+     *
+     * @param type Sensor ID to continue processing the data.
+     */
+    public void sensorChangeReceived(int type);
+
+    /**
+     * Occurs when the remote device has requested a sensor recalibration.
+     */
+    public void sensorRecalibrateRequest();
+
+    /**
+     * Occurs when a click was requested from the remote device.
+     *
+     * @param release Value indicating whether this is a new click or not.
+     *                If set to false, this is a new click and 'pressed' event will be sent.
+     *                If set to true, this is a click finish and 'released' event will be sent.
+     */
+    public void clickRequested(boolean release);
 
     /**
      * Occurs when a the connection has been lost due to a connection error.

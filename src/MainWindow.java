@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  *
  * @author RoliSoft
  */
-public class MainWindow extends JFrame implements ActionListener, WindowListener, DataListener {
+public class MainWindow extends JFrame implements ActionListener, WindowListener, ClientListener {
 
     private JButton jToggleServerButton;
     private JButton jDisconnectButton;
@@ -36,7 +36,6 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
     private InetAddress _clientAddr;
     private String _clientName;
     private DataProcessorEngine _engine;
-    private MouseHandler _mouseHandler;
 
     /**
      * Initializes the current instance and sets up the user interface.
@@ -54,6 +53,69 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
 
         pack();
         setLocationRelativeTo(null);
+    }
+
+    /**
+     * Gets the currently connected client's address.
+     *
+     * @return Client's address.
+     */
+    public InetAddress getClientAddress() {
+        return _clientAddr;
+    }
+
+    /**
+     * Sets the currently connected client's address.
+     *
+     * @param clientAddr Client's address.
+     */
+    public void setClientAddress(InetAddress clientAddr) {
+        _clientAddr = clientAddr;
+    }
+
+    /**
+     * Gets the currently connected client's host or device name.
+     *
+     * @return Client's name.
+     */
+    public String getClientName() {
+        return _clientName;
+    }
+
+    /**
+     * Sets the currently connected client's host or device name.
+     *
+     * @param clientName Client's name.
+     */
+    public void setClientName(String clientName) {
+        _clientName = clientName;
+    }
+
+    /**
+     * Gets the currently active data processing engine instance.
+     *
+     * @return Data processor engine instance.
+     */
+    public DataProcessorEngine getDataProcessorEngine() {
+        return _engine;
+    }
+
+    /**
+     * Sets the currently active data processing engine instance.
+     *
+     * @param engine Data processor engine instance.
+     */
+    public void setDataProcessorEngine(DataProcessorEngine engine) {
+        _engine = engine;
+    }
+
+    /**
+     * Gets the currently active server instance.
+     *
+     * @return Server instance.
+     */
+    public Server getServer() {
+        return _server;
     }
 
     /**
@@ -259,12 +321,6 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
 
         try {
             _engine = DataProcessorEngine.createFromType(type);
-
-            if (_mouseHandler == null) {
-                _mouseHandler = new MouseHandler();
-            }
-
-            _engine.setMouseHandler(_mouseHandler);
         } catch (IllegalArgumentException ex) {
             _engine = null;
             Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
@@ -276,66 +332,61 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
     }
 
     /**
-     * Occurs when data is received from the remote client.
-     * This data is a one-line ASCII text, which may be sent along to the active sensor data preprocessor,
-     * or handled locally by the implementing class.
+     * Occurs when sensor data is received from the remote client.
      *
-     * @param data One-line ASCII text containing commands.
-     *             The protocol is similar to that of IRC.
+     * @param data Sensor data to be processed.
      */
-    @Override
-    public void dataReceived(String data) {
-        int idx;
-        String cmd = ((idx = data.indexOf(" ")) != -1 ? data.substring(0, idx) : data).trim().toLowerCase();
+    public void sensorDataReceived(double[] data) {
+        if (_engine == null) {
+            return;
+        }
 
-        switch (cmd) {
-            case "data": {
-                if (_engine == null) {
-                    break;
-                }
+        _engine.processData(data);
+    }
 
-                _engine.processData(data.substring(idx + 1));
+    /**
+     * Occurs when the remote device has changed the sensor type.
+     *
+     * @param type Sensor ID to continue processing the data.
+     */
+    public void sensorChangeReceived(int type) {
+        try {
+            _engine = DataProcessorEngine.createFromType(type);
+        } catch (IllegalArgumentException ex) {
+            _engine = null;
+            Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
-                break;
-            }
+        setConnectionLabels();
+    }
 
-            case "type": {
-                try {
-                    _engine = DataProcessorEngine.createFromType(Integer.parseInt(data.substring(idx + 1)));
-                    _engine.setMouseHandler(_mouseHandler);
-                } catch (IllegalArgumentException ex) {
-                    _engine = null;
-                    Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
-                }
+    /**
+     * Occurs when the remote device has requested a sensor recalibration.
+     */
+    public void sensorRecalibrateRequest() {
+        if (_engine == null) {
+            return;
+        }
 
-                setConnectionLabels();
+        _engine.recalibrate();
+    }
 
-                break;
-            }
+    /**
+     * Occurs when a click was requested from the remote device.
+     *
+     * @param release Value indicating whether this is a new click or not.
+     *                If set to false, this is a new click and 'pressed' event will be sent.
+     *                If set to true, this is a click finish and 'released' event will be sent.
+     */
+    public void clickRequested(boolean release) {
+        if (_engine == null) {
+            return;
+        }
 
-            case "reset": {
-                if (_engine == null) {
-                    break;
-                }
-
-                _engine.recalibrate();
-
-                break;
-            }
-
-            case "tap": {
-                if (_engine == null) {
-                    break;
-                }
-
-                if (cmd.substring(idx + 1).contentEquals("on")) {
-                    _mouseHandler.press();
-                } else {
-                    _mouseHandler.release();
-                }
-
-                break;
-            }
+        if (release) {
+            MouseHandler.release();
+        } else {
+            MouseHandler.press();
         }
     }
 
@@ -346,7 +397,7 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
      */
     @Override
     public void connectionError(Object data) {
-        JOptionPane.showMessageDialog(this, "Client connection error:\r\n" + (data instanceof Exception ? ((Exception)data).getMessage() : (String)data), "AirMouse Network Error", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(this, "Client connection error:\r\n" + (data instanceof Exception ? ((Exception) data).getMessage() : (String) data), "AirMouse Network Error", JOptionPane.ERROR_MESSAGE);
     }
 
     /**
@@ -357,8 +408,8 @@ public class MainWindow extends JFrame implements ActionListener, WindowListener
         _clientAddr = null;
         _engine = null;
 
-        if (_mouseHandler != null && _mouseHandler.isRunning()) {
-            _mouseHandler.stop();
+        if (MouseHandler.isRunning()) {
+            MouseHandler.stop();
         }
 
         if (_server == null || !_server.isListening()) {

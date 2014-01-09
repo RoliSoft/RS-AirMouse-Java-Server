@@ -22,33 +22,20 @@ public class AccelerometerEngine extends DataProcessorEngine {
      * Processes the data received from the client device. Upon the data is processed, the data will be passed
      * to the active mouse handler on this instance as returned by {@see DataProcessorEngine.getMouseHandler()}.
      *
-     * @param data The data for this provider is preferably two comma-separated floating-point numbers,
+     * @param data The data for this provider is preferably two floating-point numbers,
      *             representing the X and Y values returned by the accelerometer.
      *
      * @throws IllegalArgumentException This exception is thrown if the received data is not properly formatted
      *                                  as at least two comma-separated floating-point numbers.
      */
     @Override
-    public void processData(String data) throws IllegalArgumentException {
-        Logger.getLogger(AccelerometerEngine.class.getName()).log(Level.INFO, data);
-
-        // TODO exceptions
-
-        StringTokenizer st = new StringTokenizer(data, ",");
-
-        double x = Double.parseDouble(st.nextToken());
-        double y = Double.parseDouble(st.nextToken());
-        double z = st.hasMoreTokens() ? Double.parseDouble(st.nextToken()) : 0;
-
-        MouseHandler mouseHandler = getMouseHandler();
-
-        if (mouseHandler == null) {
-            return;
+    public void processData(double[] data) throws IllegalArgumentException {
+        if (data.length < 2) {
+            throw new IllegalArgumentException("Data should be at least two floating-point numbers.");
         }
 
-        if (!mouseHandler.isRunning()) {
-            mouseHandler.start();
-        }
+        double x = data[0];
+        double y = data[1];
 
         if (_cX == 0 && _cY == 0) {
             _cX = x;
@@ -67,12 +54,14 @@ public class AccelerometerEngine extends DataProcessorEngine {
             y = 0;
         }
 
-        mouseHandler.setHeading(-x, y);
+        MouseHandler.setHeading(-x, y);
     }
 
     /**
      * Recalibrates the accelerometer's starting position, meaning that the current position will be considered as
      * 0,0 and further accelerometer measurements will translate to mouse-movements relative to the current position.
+     * The current implementation sets the current position to 0,0 thus invoking a recalibration when the next data
+     * is received from the accelerometer.
      */
     @Override
     public void recalibrate() {

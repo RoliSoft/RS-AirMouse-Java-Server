@@ -19,38 +19,16 @@ public abstract class DataProcessorEngine {
      */
     public static final int GYROSCOPE = 2;
 
-    private MouseHandler _mouseHandler;
-
-    /**
-     * Sets the instance of the {@link MouseHandler} this data processor should report to.
-     *
-     * @param mouseHandler {@link MouseHandler} instance to be used throughout the session.
-     */
-    public void setMouseHandler(MouseHandler mouseHandler) {
-        _mouseHandler = mouseHandler;
-    }
-
-    /**
-     * Gets the instance of the {@link MouseHandler} this data processor should report to.
-     *
-     * @see this.processData(String)
-     *
-     * @return {@link MouseHandler} instance intended to be used throughout the session.
-     */
-    public MouseHandler getMouseHandler() {
-        return _mouseHandler;
-    }
-
     /**
      * Processes the data received from the client device. Upon the data is processed, the data will be passed
      * to the active mouse handler on this instance as returned by {@see DataProcessorEngine.getMouseHandler()}.
      *
-     * @param data The data received from the client. Implementation should specify preferred type here.
+     * @param data The data received from the client.
      *
      * @throws IllegalArgumentException This exception is thrown if the received data is not properly formatted
      *                                  as specified in the documentation of the data argument.
      */
-    public abstract void processData(String data);
+    public abstract void processData(double[] data);
 
     /**
      * Recalibrates the sensor's starting position, meaning that the current position will be considered as

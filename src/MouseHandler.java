@@ -19,10 +19,7 @@ public class MouseHandler {
     private static Robot _robot;
     private static PointerInfo _mouse;
     private static Dimension _screen;
-
-    private Thread _thd;
-    private long _time;
-    private double _x, _y;
+    private static MouseMoverThread _thd;
 
     /**
      * Initializes the static values for private use of this class.
@@ -71,18 +68,18 @@ public class MouseHandler {
 
     /**
      * Sets the heading of the mouse to the specified coordinates.  In order for this work, the underlying
-     * mouse handler thread will have to be started using {@link this.start()}. Please note, this function
-     * will not automatically start the thread and won't fail if such thread is not already initialized, in
-     * order to allow pre-setting and/or pausing of the mouse movements.
+     * mouse handler thread will have to be started using {@link this.start()}, therefore if the thread
+     * is not yet running, this call will start it.
      *
      * @param x The X value of the coordinate to start navigating to.
      * @param y The Y value of the coordinate to start navigating to.
      */
-    public void setHeading(double x, double y) {
-        _x = x;
-        _y = y;
+    public static void setHeading(double x, double y) {
+        if (!isRunning()) {
+            start();
+        }
 
-        _time = System.currentTimeMillis();
+        _thd.setHeading(x, y);
     }
 
     /**
@@ -108,38 +105,12 @@ public class MouseHandler {
      * animate the movement of the mouse to it. This is being done in order to filter out jerkiness without losing
      * accuracy.
      */
-    public void start() {
+    public static void start() {
         if (isRunning()) {
             return;
         }
 
-        // TODO extract this
-
-        _thd = new Thread(() -> {
-
-            while (true) {
-                if (System.currentTimeMillis() - _time > 1000) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                    continue;
-                }
-
-                Point mouse = MouseInfo.getPointerInfo().getLocation();
-                moveTo((int)(Math.round(mouse.getX() + _x) % _screen.getWidth()), (int)(Math.round(mouse.getY() + _y) % _screen.getHeight()));
-
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
-        });
-
+        _thd = new MouseMoverThread();
         _thd.start();
     }
 
@@ -148,14 +119,14 @@ public class MouseHandler {
      *
      * @return Value indicating whether the underlying thread is alive.
      */
-    public boolean isRunning() {
+    public static boolean isRunning() {
         return _thd != null && _thd.isAlive();
     }
 
     /**
      * Stops the underlying thread if such thread exists and is active.
      */
-    public void stop() {
+    public static void stop() {
         if (isRunning()) {
             _thd.stop();
             _thd = null;

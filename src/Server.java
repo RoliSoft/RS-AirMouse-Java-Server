@@ -1,6 +1,4 @@
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Inet6Address;
@@ -12,7 +10,6 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,7 +31,10 @@ public class Server {
     private DatagramSocket _udpServer;
     private Thread _tcpThread, _udpThread;
     private Socket _client;
-    private ArrayList<DataListener> _listeners;
+    private DataInputStream _tcpInStream;
+    private DataOutputStream _tcpOutStream;
+    private ArrayList<ClientListener> _listeners;
+    private Protocol _protocol;
 
     /**
      * Initializes the current instance.
@@ -71,12 +71,12 @@ public class Server {
     }
 
     /**
-     * Registers a new {@see DataListener} on this instance.
+     * Registers a new {@see ClientListener} on this instance.
      * When something happens, these registered instances will be notified in chronological order of their registration.
      *
-     * @param dl An instance implementing the {@see DataListener} interface.
+     * @param dl An instance implementing the {@see ClientListener} interface.
      */
-    public void addListener(DataListener dl) {
+    public void addListener(ClientListener dl) {
         _listeners.add(dl);
     }
 
@@ -87,8 +87,44 @@ public class Server {
      *
      * @return True if the listener was successfully removed; otherwise, false.
      */
-    public boolean removeListener(DataListener dl) {
+    public boolean removeListener(ClientListener dl) {
         return _listeners.remove(dl);
+    }
+
+    /**
+     * Gets the current instance of the TCP input stream.
+     *
+     * @return The input stream to read from.
+     */
+    public DataInputStream getInputStream() {
+        return _tcpInStream;
+    }
+
+    /**
+     * Gets the current instance of the TCP output stream.
+     *
+     * @return The output stream to write to.
+     */
+    public DataOutputStream getOutputStream() {
+        return _tcpOutStream;
+    }
+
+    /**
+     * Gets the current list of client listeners.
+     *
+     * @return A list of client listeners.
+     */
+    public ArrayList<ClientListener> getListeners() {
+        return _listeners;
+    }
+
+    /**
+     * Gets the currently connected client or null.
+     *
+     * @return Connected client or null.
+     */
+    public Socket getClient() {
+        return _client;
     }
 
     /**
@@ -164,15 +200,17 @@ public class Server {
             @Override
             public void run() {
                 while (_tcpThread != null) {
-                    DataInputStream is;
-
                     try {
                         _client = _tcpServer.accept();
-                        is = new DataInputStream(new BufferedInputStream(_client.getInputStream()));
+
+                        _tcpInStream  = new DataInputStream(new BufferedInputStream(_client.getInputStream()));
+                        _tcpOutStream = new DataOutputStream(new BufferedOutputStream(_client.getOutputStream()));
+
+                        _protocol = new PlainTextProtocol(Server.this);
                     } catch (IOException ex) {
                         Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
 
-                        for (DataListener dl : _listeners) {
+                        for (ClientListener dl : _listeners) {
                             dl.connectionError(ex);
                         }
 
@@ -182,36 +220,14 @@ public class Server {
                     Logger.getLogger(Server.class.getName()).log(Level.INFO, "Client connected from {0}", _client.getInetAddress().getHostAddress());
 
                     try {
-                        String line = is.readLine();
-                        StringTokenizer st = new StringTokenizer(line);
+                        _protocol.handshake();
 
-                        if (!st.hasMoreTokens() || !st.nextToken().contentEquals("RS-AirMouse")) {
-                            throw new IOException("Handshake error, line not valid:\r\n" + line);
-                        }
-
-                        String host = st.nextToken();
-                        int type = Integer.parseInt(st.nextToken());
-
-                        for (DataListener dl : _listeners) {
-                            dl.clientConnected(_client.getInetAddress(), host, type);
-                        }
-
-                        boolean done = false;
-                        while (!done && _client != null) {
+                        boolean loop = true;
+                        while (loop && _client != null) {
                             try {
-                                line = is.readLine();
-
-                                if (line == null || line.trim().toLowerCase().contentEquals("quit")) {
-                                    done = true;
-                                }
+                                loop = _protocol.readNext();
                             } catch (IOException ex) {
-                                done = true;
-                            }
-
-                            if (!done && line != null && line.length() > 0) {
-                                for (DataListener dl : _listeners) {
-                                    dl.dataReceived(line);
-                                }
+                                loop = false;
                             }
                         }
 
@@ -223,14 +239,14 @@ public class Server {
                             }
                         }
 
-                        for (DataListener dl : _listeners) {
+                        for (ClientListener dl : _listeners) {
                             dl.clientDisconnected();
                         }
 
                     } catch (IOException ex) {
                         Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
 
-                        for (DataListener dl : _listeners) {
+                        for (ClientListener dl : _listeners) {
                             dl.connectionError(ex);
                         }
 
