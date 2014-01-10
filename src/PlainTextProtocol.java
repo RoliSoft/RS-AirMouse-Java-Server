@@ -100,7 +100,7 @@ public class PlainTextProtocol extends Protocol {
             }
 
             case "tap": {
-                boolean release = !cmd.substring(idx + 1).contentEquals("on");
+                boolean release = !line.substring(idx + 1).contentEquals("on");
 
                 for (ClientListener dl : getServer().getListeners()) {
                     dl.clickRequested(release);
